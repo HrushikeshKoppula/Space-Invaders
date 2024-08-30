@@ -54,6 +54,7 @@ class SPACESHIP:
         self.top+=self.speed
         if self.top>self.dlim:
             self.top=self.dlim
+
 class ENEMY:
     def __init__(self,left,top,width=45,height=45,color="red",speed=2):
         self.image = enemies_img
@@ -63,18 +64,19 @@ class ENEMY:
         self.height = height
         self.color = color
         self.speed = speed
-        self.direction = 1
 
     def Draw(self):
         screen.blit(self.image,(self.left,self.top))
         # pygame.draw.rect(screen,self.color,(self.left,self.top,self.width,self.height))
 
-    def Move(self):
-        self.left+=self.speed*self.direction
+    def Move(self,direction):
+        self.left+=self.speed*direction
+        
+    def edge_check(self):
         if self.left<=0 or self.left>=screen_width-self.width:
-            self.direction*=-1
-            self.top+=20
-
+            return True
+            # self.direction*=-1
+            # self.top+=20
 
 class Projectile:
     def __init__(self,x,y,r,color,speed,ulim):
@@ -116,6 +118,34 @@ def check_collision(projectile,enemy):
         return True
     return False
 
+class ENEMIES:
+    def __init__(self,row,col):
+        self.Enemies = []
+        for row in range(3):
+            for col in range(7):
+                left = col*100+100
+                top = row*60+50
+                self.Enemies.append(ENEMY(left,top))
+        self.swarm_direction = 1
+    
+    def Move_and_check_collision(self,projectiles):
+        self.edge_checker_for_all()
+        for enemy in self.Enemies:
+            enemy.Move(self.swarm_direction)
+            enemy.Draw()
+            for projectile in projectiles.projectiles_list:
+                if check_collision(projectile,enemy):
+                    projectiles.projectiles_list.remove(projectile)
+                    self.Enemies.remove(enemy)
+                    break
+
+    def edge_checker_for_all(self):
+        for enemie in self.Enemies:
+            if enemie.edge_check():
+                self.swarm_direction*=-1
+                break
+
+
 class Button:
     def __init__(self,left,top,width,height,color,text,font_size=30):
         self.left = left
@@ -139,10 +169,10 @@ class Button:
 
 
 SpaceShip = SPACESHIP()
-Enemies = [ENEMY(100*i,100) for i in range(5)]
 projectiles = Projectiles()
 start_button = Button(screen_width//2-100,screen_height//2+150,200,100,"green","Start")
 end_button = Button(screen_width//2+100,screen_height//2+150,200,100,"red","End")
+Enemies = ENEMIES(3,7)
 
 def main():
     game_active = False
@@ -155,7 +185,6 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.is_clicked(event.pos):
                     game_active = True
-                    # Enemies = [ENEMY(100*i,100) for i in range(5)]
                 if end_button.is_clicked(event.pos):
                     running = False
             if event.type == pygame.KEYDOWN and game_active:
@@ -164,7 +193,7 @@ def main():
 
         # screen.fill("purple")
 
-        if len(Enemies)==0:
+        if len(Enemies.Enemies)==0:
             game_active = False
             game_end = True
 
@@ -184,14 +213,7 @@ def main():
             projectiles.update()
             projectiles.Draw()
 
-            for enemy in Enemies[:]:
-                enemy.Move()
-                enemy.Draw()
-                for projectile in projectiles.projectiles_list[:]:
-                    if check_collision(projectile,enemy):
-                        projectiles.projectiles_list.remove(projectile)
-                        Enemies.remove(enemy)
-                        break
+            Enemies.Move_and_check_collision(projectiles)
 
         elif not game_end:
             screen.blit(start_img,(0,0))
