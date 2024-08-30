@@ -16,7 +16,7 @@ enemies_img = pygame.image.load("enemies.png")
 enemies_img = pygame.transform.scale(enemies_img,(40,40))
 
 class SPACESHIP:
-    def __init__(self,left=screen_width/2,top=screen_height/2,width=45,height=80,color="green",speed=5):
+    def __init__(self,left=screen_width/2,top=screen_height/2+200,width=45,height=80,color="green",speed=5):
         self.image = spaceship_img
         self.left = left
         self.top = top
@@ -121,8 +121,8 @@ def check_collision(projectile,enemy):
 class ENEMIES:
     def __init__(self,row,col):
         self.Enemies = []
-        for row in range(3):
-            for col in range(7):
+        for row in range(row):
+            for col in range(col):
                 left = col*100+100
                 top = row*60+50
                 self.Enemies.append(ENEMY(left,top))
@@ -170,13 +170,13 @@ class Button:
 
 SpaceShip = SPACESHIP()
 projectiles = Projectiles()
+Enemies = None
 start_button = Button(screen_width//2-100,screen_height//2+150,200,100,"green","Start")
 end_button = Button(screen_width//2+100,screen_height//2+150,200,100,"red","End")
-Enemies = ENEMIES(3,7)
 
 def main():
+    game_level = 0
     game_active = False
-    game_end = False
     running = True
     while running:
         for event in pygame.event.get():
@@ -184,7 +184,8 @@ def main():
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if start_button.is_clicked(event.pos):
-                    game_active = True
+                    # game_active = True
+                    game_level = 1
                 if end_button.is_clicked(event.pos):
                     running = False
             if event.type == pygame.KEYDOWN and game_active:
@@ -193,9 +194,29 @@ def main():
 
         # screen.fill("purple")
 
-        if len(Enemies.Enemies)==0:
-            game_active = False
-            game_end = True
+        # if len(Enemies.Enemies)==0:
+        #     game_active = False
+        #     game_end = True
+
+        if game_level == 0:
+            screen.blit(start_img,(0,0))
+            start_button.Draw()
+
+        elif game_level == 1 and not game_active:
+            Enemies = ENEMIES(1,3)
+            game_active = True
+
+        elif game_level == 2 and not game_active:
+            Enemies = ENEMIES(3,5)
+            game_active = True
+
+        elif game_level == 3 and not game_active:
+            Enemies = ENEMIES(5,7)
+            game_active = True
+
+        else:
+            screen.blit(start_img,(0,0))
+            end_button.Draw()
 
         if game_active:
             screen.blit(background_img,(0,0))
@@ -215,13 +236,9 @@ def main():
 
             Enemies.Move_and_check_collision(projectiles)
 
-        elif not game_end:
-            screen.blit(start_img,(0,0))
-            start_button.Draw()
-
-        else:
-            screen.blit(start_img,(0,0))
-            end_button.Draw()
+            if len(Enemies.Enemies) == 0:
+                game_active = False
+                game_level+=1
 
         pygame.display.flip()
         clock.tick(60)
